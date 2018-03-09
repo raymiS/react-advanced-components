@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-// Compound components allows you to share implicit state between the parent component and its children with some functionality as well. This gives the developer more control over the order of the component rendering. In this exercice we use three children that get pass some props and the state from the Toggle parent component. To pass the props, React uses a special maps method for that grabs the children that the developers defines, creates a copy of them and sets them up with the props the developers needs the children to have.
+// The problem with mapping children is that we don't have structural flexbility, meaning that the elements being rendered always have to be direct descendands of their parent otherwhise, the functionality breaks. To solve this we need to use context
 
 const ToggleOn = ({ on, children }) => {
   return on ? children : null;
