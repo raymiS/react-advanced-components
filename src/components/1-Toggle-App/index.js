@@ -1,24 +1,39 @@
 import React, { Component } from 'react';
+import Proptypes from 'prop-types';
 
 // The problem with mapping children is that we don't have structural flexbility, meaning that the elements being rendered always have to be direct descendands of their parent otherwhise, the functionality breaks. To solve this we need to use context
 
-const ToggleOn = ({ on, children }) => {
+const TOGGLE_CONTEXT = '__toggle__';
+
+const ToggleOn = ({ children }, context) => {
+  const { on } = context[TOGGLE_CONTEXT];
   return on ? children : null;
 };
 
-const ToggleOff = ({ on, children }) => {
+ToggleOn.contextTypes = { [TOGGLE_CONTEXT]: Proptypes.object.isRequired };
+
+const ToggleOff = ({ children }, context) => {
+  const { on } = context[TOGGLE_CONTEXT];
   return on ? null : children;
 };
 
-const ToggleButton = ({ on, toggle, ...props }) => {
+ToggleOff.contextTypes = { [TOGGLE_CONTEXT]: Proptypes.object.isRequired };
+
+const ToggleButton = (props, context) => {
+  const { on, toggle } = context[TOGGLE_CONTEXT];
   return <Switch on={on} onClick={toggle} {...props} />;
 };
+
+ToggleButton.contextTypes = { [TOGGLE_CONTEXT]: Proptypes.object.isRequired };
 
 class Toggle extends Component {
   static On = ToggleOn;
   static Off = ToggleOff;
   static Button = ToggleButton;
   static defaultProps = { onToggle: () => {} };
+  static childContextTypes = {
+    [TOGGLE_CONTEXT]: Proptypes.object.isRequired
+  };
   state = { on: false };
 
   toggle = () =>
@@ -27,14 +42,15 @@ class Toggle extends Component {
       () => this.props.onToggle(this.state.on)
     );
 
+  getChildContext = () => ({
+    [TOGGLE_CONTEXT]: {
+      on: this.state.on,
+      toggle: this.toggle
+    }
+  });
+
   render() {
-    const children = React.Children.map(this.props.children, child =>
-      React.cloneElement(child, {
-        on: this.state.on,
-        toggle: this.toggle
-      })
-    );
-    return <div>{children}</div>;
+    return <div>{this.props.children}</div>;
   }
 }
 
