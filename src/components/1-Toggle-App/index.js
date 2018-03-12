@@ -1,17 +1,13 @@
 import React, { Component } from 'react';
 import Proptypes from 'prop-types';
 
-/* If we wanted to add another component inside our Toggle component tree we need to wire Context to it. But what happens if we wanted to use the Toggle component across the application? It's not very safe to wire it with Context because at the time it's an experimental API so any changes or updates on the API, might cause big trouble for the whole app. To work around this we'll create a Higher Order Component and inside that HOC we will "save" the context functionality so that we can only wire Context to a children instead to the entire Toggle Component parent
-
-Higher Order Components allows us to separate functinality that can be rehuse across different components. It doesn't matter which kind, the HOC "saves" the functionality and we just add the component that we want to enhanced the functionality to.
-*/
-
 const TOGGLE_CONTEXT = '__toggle__';
 
 const withToggle = Component => {
+  // To fix the prop namespace clash I put a toggle name to wrap all the props that come from the Toggle context
   const Wrapper = (props, context) => {
     const componentContext = context[TOGGLE_CONTEXT];
-    return <Component {...componentContext} {...props} />;
+    return <Component toggle={componentContext} {...props} />;
   };
 
   Wrapper.contextTypes = {
@@ -21,21 +17,29 @@ const withToggle = Component => {
   return Wrapper;
 };
 
-const ToggleOn = withToggle(({ children, on }) => {
+const ToggleOn = withToggle(({ children, toggle: { on } }) => {
   return on ? children : null;
 });
 
-const ToggleOff = withToggle(({ children, on }) => {
+const ToggleOff = withToggle(({ children, toggle: { on } }) => {
   return on ? null : children;
 });
 
-const ToggleButton = withToggle(({ on, toggle }, props) => {
+const ToggleButton = withToggle(({ toggle: { on, toggle } }, props) => {
   return <Switch on={on} onClick={toggle} {...props} />;
 });
 
-const MyOwnToggleBtn = withToggle(({ on, toggle }) => (
+const MyOwnToggleBtn = withToggle(({ toggle: { on, toggle } }) => (
   <button onClick={toggle}>{on ? 'on' : 'off'}</button>
 ));
+
+// Component with prop namespace clash. In this case when we use the withToggle HOC we are returning the new component with the props from withToggle but we are also providing props to the MyEventComp and with the same name (on). When this happens it's called a prop namespace clash, where a prop with the same name overwrites the functionality of the other prop
+
+const MyEventComp = withToggle(({ toggle, on, event }) => {
+  const props = { [event]: on };
+
+  return toggle.on ? <button {...props}>The {event} event</button> : null;
+});
 
 class Toggle extends Component {
   static On = ToggleOn;
@@ -87,6 +91,8 @@ const ToggleWrap = () => {
       <MyOwnToggleBtn />
       <Toggle.Off>The button is off</Toggle.Off>
       <Toggle.Button />
+      <hr />
+      <MyEventComp event="onClick" on={e => console.log(e.type)} />
     </Toggle>
   );
 };
